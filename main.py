@@ -3,13 +3,17 @@ from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
+from flask_mail import Mail, Message
+
 from arguments import Arguments
+from config import Config
+from actions import build_message
 
 ARGS = Arguments.parse()
 
-app = Flask(__name__)
+app = Config.with_args(Flask(__name__), ARGS)
 
-app.config['JWT_SECRET_KEY'] = ARGS.secret
+mail = Mail(app)
 jwt = JWTManager(app)
 
 
@@ -30,6 +34,14 @@ def login():
 
     access_token = create_access_token(identity=username)
     return jsonify(access_token=access_token), 200
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    msg = Message('Bun venit de la LexBox', sender=ARGS.email, recipients=[request.form['email']])
+    msg.body = build_message(request.form)
+    mail.send(msg)
+    return "Sent"
 
 
 @app.route('/protected', methods=['GET'])
