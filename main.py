@@ -45,7 +45,7 @@ def register():
     msg.html = render_template("ConfirmationEmail.html",
                                firstName=request.form['firstName'],
                                lastName=request.form['lastName'],
-                               confirmationUrl=f'http://localhost:5000/confirm_email/{confirmation_id}?email={email}')
+                               confirmationUrl=f'{os.getenv("URL")}/confirm_email/{confirmation_id}?email={email}')
     mail.send(msg)
     return "Sent"
 
