@@ -1,3 +1,6 @@
+import uuid
+import os
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, render_template
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
@@ -5,14 +8,11 @@ from flask_jwt_extended import (
 )
 from flask_mail import Mail, Message
 
-import uuid
-
-from arguments import Arguments
 from config import Config
 
-ARGS = Arguments.parse()
+load_dotenv()
 
-app = Config.with_args(Flask(__name__), ARGS)
+app = Config.for_app(Flask(__name__))
 
 mail = Mail(app)
 jwt = JWTManager(app)
@@ -40,7 +40,7 @@ def login():
 @app.route('/register', methods=['POST'])
 def register():
     confirmation_id = uuid.uuid1()
-    msg = Message('Bun venit de la LexBox', sender=ARGS.email, recipients=[request.form['email']])
+    msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[request.form['email']])
     msg.html = render_template("ConfirmationEmail.html",
                                firstName=request.form['firstName'],
                                lastName=request.form['lastName'],
