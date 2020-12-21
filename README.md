@@ -7,3 +7,4 @@ a `.env` file in the project's root directory. These are:
 * SECRET -> flask secret
 * EMAIL -> gmail address used for the emailing service
 * PASSWORD -> the password for the above email address
+* URL -> url of where the application is running
