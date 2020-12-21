@@ -40,11 +40,12 @@ def login():
 @app.route('/register', methods=['POST'])
 def register():
     confirmation_id = uuid.uuid1()
-    msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[request.form['email']])
+    email = request.form['email']
+    msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[email])
     msg.html = render_template("ConfirmationEmail.html",
                                firstName=request.form['firstName'],
                                lastName=request.form['lastName'],
-                               confirmationUrl=f'http://localhost:5000/confirm_email/{confirmation_id}')
+                               confirmationUrl=f'http://localhost:5000/confirm_email/{confirmation_id}?email={email}')
     mail.send(msg)
     return "Sent"
 
