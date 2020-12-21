@@ -1,13 +1,14 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
 from flask_mail import Mail, Message
 
+import uuid
+
 from arguments import Arguments
 from config import Config
-from actions import build_message
 
 ARGS = Arguments.parse()
 
@@ -38,10 +39,19 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
+    confirmation_id = uuid.uuid1()
     msg = Message('Bun venit de la LexBox', sender=ARGS.email, recipients=[request.form['email']])
-    msg.body = build_message(request.form)
+    msg.html = render_template("ConfirmationEmail.html",
+                               firstName=request.form['firstName'],
+                               lastName=request.form['lastName'],
+                               confirmationUrl=f'http://localhost:5000/confirm_email/{confirmation_id}')
     mail.send(msg)
     return "Sent"
+
+
+@app.route('/confirm_email/<uuid:confirmation_id>', methods=['POST', 'GET'])
+def confirm(confirmation_id):
+    return str(confirmation_id)
 
 
 @app.route('/protected', methods=['GET'])
