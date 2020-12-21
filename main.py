@@ -1,21 +1,16 @@
-import uuid
 import os
-from dotenv import load_dotenv
-from flask import Flask, jsonify, request, render_template
+import uuid
+
+from flask import jsonify, request, render_template
 from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token,
+    jwt_required, create_access_token,
     get_jwt_identity
 )
-from flask_mail import Mail, Message
+from flask_mail import Message
 
-from config import Config
+from config.setup import setup
 
-load_dotenv()
-
-app = Config.for_app(Flask(__name__))
-
-mail = Mail(app)
-jwt = JWTManager(app)
+app, mail, jwt = setup()
 
 
 @app.route('/login', methods=['POST'])
