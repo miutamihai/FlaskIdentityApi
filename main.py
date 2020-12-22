@@ -112,7 +112,10 @@ def generate():
         "assisted": request.json.get('assisted', None),
         "accused": request.json.get('accused', None),
         "record": request.json.get('record', None),
-        "fine": request.json.get('fine', None)
+        "fine": request.json.get('fine', None),
+        "sanction": request.json.get('sanction', None),
+        "agreed_to_sanction": request.json.get('agreed_to_sanction', None),
+        "witnesses": request.json.get('witnesses', None)
     }
     doc.render(context)
     doc.save("result.docx")
