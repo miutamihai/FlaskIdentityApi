@@ -16,6 +16,6 @@ services:
     command: -c '/usr/bin/minio server /data'
     environment:
       MINIO_ACCESS_KEY: "admin"
-      MINIO_SECRET_KEY: "admin"
+      MINIO_SECRET_KEY: "reallystupidpassword"
     ports:
       - "9000:9000"

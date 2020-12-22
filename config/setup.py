@@ -1,4 +1,6 @@
 import os
+
+import boto3
 import pymongo
 
 from dotenv import load_dotenv
@@ -14,6 +16,9 @@ def setup():
 
     app = Flask(__name__, template_folder='../templates')
     client = pymongo.MongoClient(f'mongodb://{os.getenv("MONGO_USER")}:{os.getenv("MONGO_PASSWORD")}@localhost:27017/')
+    minio_client = boto3.client('s3', endpoint_url='http://localhost:9000',
+                                aws_access_key_id=os.getenv('MINIO_ACCESS_KEY'),
+                                aws_secret_access_key=os.getenv('MINIO_SECRET_KEY'))
 
     app.config['JWT_SECRET_KEY'] = os.getenv('SECRET')
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -27,4 +32,4 @@ def setup():
     jwt = JWTManager(app)
     users = client['lexbox']['users']
 
-    return app, mail, jwt, users
+    return app, mail, jwt, users, minio_client

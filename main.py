@@ -1,5 +1,6 @@
 import hashlib
 import os
+import uuid
 
 from docxtpl import DocxTemplate
 from flask import request, render_template, Response
@@ -11,7 +12,7 @@ from flask_mail import Message
 
 from config.setup import setup
 
-app, mail, jwt, users = setup()
+app, mail, jwt, users, minio_client = setup()
 
 
 @app.route('/login', methods=['POST'])
@@ -119,7 +120,10 @@ def generate():
     }
     doc.render(context)
     doc.save("result.docx")
-    return Response('', status=200, mimetype='application/json')
+    cloud_id = str(uuid.uuid1())
+    with open("result.docx", "rb") as f:
+        minio_client.upload_fileobj(f, 'lexbox', cloud_id)
+    return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200, mimetype='application/json')
 
 
 if __name__ == '__main__':
