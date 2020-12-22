@@ -1,7 +1,7 @@
+import hashlib
 import os
-import uuid
 
-from flask import jsonify, request, render_template, Response
+from flask import request, render_template, Response
 from flask_jwt_extended import (
     jwt_required, create_access_token,
     get_jwt_identity
@@ -15,33 +15,36 @@ app, mail, jwt, users = setup()
 
 @app.route('/login', methods=['POST'])
 def login():
-    if not request.is_json:
-        return jsonify({"msg": "Missing JSON in request"}), 400
+    user = users.find_one({"email": request.form["email"]})
+    if user is None:
+        return Response('{ "success": false, "exception": "User not found" }', status=404, mimetype='application/json')
 
-    username = request.json.get('username', None)
-    password = request.json.get('password', None)
-    if not username:
-        return jsonify({"msg": "Missing username parameter"}), 400
-    if not password:
-        return jsonify({"msg": "Missing password parameter"}), 400
+    key = hashlib.pbkdf2_hmac(
+        'sha256',
+        request.form['password'].encode('utf-8'),
+        user["salt"],
+        100000
+    )
 
-    if username != 'test' or password != 'test':
-        return jsonify({"msg": "Bad username or password"}), 401
-
-    access_token = create_access_token(identity=username)
-    return jsonify(access_token=access_token), 200
+    if key == user["key"]:
+        access_token = create_access_token(identity=request.form["email"])
+        return Response(f'{{ "success": true, "token": "{access_token}" }}', status=200, mimetype='application/json')
+    else:
+        return Response('{ "success": false, "exception": "Incorrect password" }', status=401, mimetype='application'
+                                                                                                        '/json')
 
 
 @app.route('/register', methods=['POST'])
 def register():
     try:
-        confirmation_id = uuid.uuid1()
         email = request.form['email']
+        if users.find_one({"email": email}) is not None:
+            return Response('{ "success": false, "exception": "Email already exists" }', status=401, mimetype='application/json')
         msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[email])
         msg.html = render_template("ConfirmationEmail.html",
                                    firstName=request.form['firstName'],
                                    lastName=request.form['lastName'],
-                                   confirmationUrl=f'{os.getenv("URL")}/confirm_email/{confirmation_id}?email={email}')
+                                   confirmationUrl=f'{os.getenv("URL")}/confirm_email?email={email}')
         mail.send(msg)
         users.insert_one({
             "firstName": request.form['firstName'],
@@ -49,6 +52,7 @@ def register():
             "email": email,
             "cnp": request.form['cnp'],
             "ci": request.form['ci'],
+            "email_confirmed": False,
             "address": {
                 "city": request.form['city'],
                 "street": request.form['street'],
@@ -58,21 +62,35 @@ def register():
                 "county": request.form['county']
             }
         })
-        return Response('{ "success": true }', status=200, mimetype='application/json')
-    except:
-        return Response('{ "success": false }', status=500, mimetype='application/json')
+        access_token = create_access_token(identity=email)
+        return Response(f'{{ "success": true, "token": "{access_token}" }}', status=200, mimetype='application/json')
+    except Exception as e:
+        return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
 
 
-@app.route('/confirm_email/<uuid:confirmation_id>', methods=['POST', 'GET'])
-def confirm(confirmation_id):
-    return str(confirmation_id)
-
-
-@app.route('/protected', methods=['GET'])
+@app.route('/confirm_email', methods=['POST'])
 @jwt_required
-def protected():
-    current_user = get_jwt_identity()
-    return jsonify(logged_in_as=current_user), 200
+def confirm():
+    try:
+        email = get_jwt_identity()
+        if users.find_one({"email": email})["email_confirmed"]:
+            return Response('{ "success": false, "exception": Email already confirmed }', status=401, mimetype='application/json')
+        salt = os.urandom(32)
+        password = request.form['password']
+        key = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt,
+            100000
+        )
+        users.update_one({"email": email}, {"$set": {
+            "email_confirmed": True,
+            "salt": salt,
+            "key": key
+        }})
+        return Response('{ "success": true }', status=205, mimetype='application/json')
+    except Exception as e:
+        return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
 
 
 if __name__ == '__main__':
