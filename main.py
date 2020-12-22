@@ -104,12 +104,13 @@ def generate():
     doc = DocxTemplate("templates/request.docx")
     user = users.find_one({"email": get_jwt_identity()})
     context = {
-        "law": request.form['law'],
+        "law": request.json.get('law', None),
         "first_name": user['firstName'],
         "last_name": user['lastName'],
         "address": user['address'],
         "ci": user['ci'],
-        "assisted": request.form['assisted']
+        "assisted": request.json.get('assisted', None),
+        "accused": request.json.get('accused', None)
     }
     doc.render(context)
     doc.save("result.docx")
