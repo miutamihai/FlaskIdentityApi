@@ -1,7 +1,7 @@
 import os
 import uuid
 
-from flask import jsonify, request, render_template
+from flask import jsonify, request, render_template, Response
 from flask_jwt_extended import (
     jwt_required, create_access_token,
     get_jwt_identity
@@ -34,20 +34,33 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    confirmation_id = uuid.uuid1()
-    email = request.form['email']
-    msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[email])
-    msg.html = render_template("ConfirmationEmail.html",
-                               firstName=request.form['firstName'],
-                               lastName=request.form['lastName'],
-                               confirmationUrl=f'{os.getenv("URL")}/confirm_email/{confirmation_id}?email={email}')
-    mail.send(msg)
-    users.insert_one({
-        "firstName": request.form['firstName'],
-        "lastName": request.form['lastName'],
-        "email": email
-    })
-    return "Sent"
+    try:
+        confirmation_id = uuid.uuid1()
+        email = request.form['email']
+        msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[email])
+        msg.html = render_template("ConfirmationEmail.html",
+                                   firstName=request.form['firstName'],
+                                   lastName=request.form['lastName'],
+                                   confirmationUrl=f'{os.getenv("URL")}/confirm_email/{confirmation_id}?email={email}')
+        mail.send(msg)
+        users.insert_one({
+            "firstName": request.form['firstName'],
+            "lastName": request.form['lastName'],
+            "email": email,
+            "cnp": request.form['cnp'],
+            "ci": request.form['ci'],
+            "address": {
+                "city": request.form['city'],
+                "street": request.form['street'],
+                "number": request.form['number'],
+                "block": request.form['block'],
+                "apartment": request.form['apartment'],
+                "county": request.form['county']
+            }
+        })
+        return Response('{ "success": true }', status=200, mimetype='application/json')
+    except:
+        return Response('{ "success": false }', status=500, mimetype='application/json')
 
 
 @app.route('/confirm_email/<uuid:confirmation_id>', methods=['POST', 'GET'])
