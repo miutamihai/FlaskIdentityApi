@@ -1,6 +1,7 @@
 import hashlib
 import os
 
+from docxtpl import DocxTemplate
 from flask import request, render_template, Response
 from flask_jwt_extended import (
     jwt_required, create_access_token,
@@ -51,13 +52,17 @@ def register():
             "lastName": request.form['lastName'],
             "email": email,
             "cnp": request.form['cnp'],
-            "ci": request.form['ci'],
+            "ci": {
+                "series": request.form['ciSeries'],
+                "number": request.form['ciNumber']
+            },
             "email_confirmed": False,
             "address": {
                 "city": request.form['city'],
                 "street": request.form['street'],
                 "number": request.form['number'],
                 "block": request.form['block'],
+                "stair": request.form['stair'],
                 "apartment": request.form['apartment'],
                 "county": request.form['county']
             }
@@ -91,6 +96,24 @@ def confirm():
         return Response('{ "success": true }', status=205, mimetype='application/json')
     except Exception as e:
         return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
+
+
+@app.route('/generate_document', methods=['POST'])
+@jwt_required
+def generate():
+    doc = DocxTemplate("templates/request.docx")
+    user = users.find_one({"email": get_jwt_identity()})
+    context = {
+        "law": request.form['law'],
+        "first_name": user['firstName'],
+        "last_name": user['lastName'],
+        "address": user['address'],
+        "ci": user['ci'],
+        "assisted": request.form['assisted']
+    }
+    doc.render(context)
+    doc.save("result.docx")
+    return Response('', status=200, mimetype='application/json')
 
 
 if __name__ == '__main__':
