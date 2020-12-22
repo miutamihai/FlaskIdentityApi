@@ -110,7 +110,9 @@ def generate():
         "address": user['address'],
         "ci": user['ci'],
         "assisted": request.json.get('assisted', None),
-        "accused": request.json.get('accused', None)
+        "accused": request.json.get('accused', None),
+        "record": request.json.get('record', None),
+        "fine": request.json.get('fine', None)
     }
     doc.render(context)
     doc.save("result.docx")
