@@ -1,0 +1,21 @@
+version: "3.6"
+
+services:
+  mongo:
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: lexbox
+    image: library/mongo:latest
+    ports:
+    - 27017:27017
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    entrypoint: sh
+    command: -c '/usr/bin/minio server /data'
+    environment:
+      MINIO_ACCESS_KEY: "admin"
+      MINIO_SECRET_KEY: "admin"
+    ports:
+      - "9000:9000"

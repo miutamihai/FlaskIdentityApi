@@ -12,10 +12,11 @@ a `.env` file in the project's root directory. These are:
 * MONGO_PASSWORD -> the mongodb password
 
 ## Running the app
-First make sure to have a MongoDb instance running. This
-can be achieved with `docker` by running the following command:
-`docker run -it --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin -e MONGO_INITDB_DATABASE=lexbox mongo`.
-
+First make sure to have MongoDb and Minio instances running. They can both be 
+bootstrapped by using [docker-compose](https://docs.docker.com/compose/), specifically
+by running `docker-compose up` from the project's root directory.
+Otherwise, both Minio and MongoDb have to be manually installed and configured to use
+the same `environment variables` as present in the `docker-compose.yml` file.  
 
 Also, bear in mind that the following commands apply to UNIX-like systems,
 like Linux and MacOS. If using Windows, go ask Billie for help. 
