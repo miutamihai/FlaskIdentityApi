@@ -18,6 +18,6 @@ can be achieved with `docker` by running the following command:
 
 * Open up a terminal
 * Navigate to the project's root directory
-* Run: `src venv/bin/activate`
+* Run: `source venv/bin/activate`
 * Run: `pip3 install -r requirements.txt`
 * Run: `python3 main.py`
