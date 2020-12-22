@@ -10,7 +10,7 @@ from flask_mail import Message
 
 from config.setup import setup
 
-app, mail, jwt = setup()
+app, mail, jwt, users = setup()
 
 
 @app.route('/login', methods=['POST'])
@@ -42,6 +42,11 @@ def register():
                                lastName=request.form['lastName'],
                                confirmationUrl=f'{os.getenv("URL")}/confirm_email/{confirmation_id}?email={email}')
     mail.send(msg)
+    users.insert_one({
+        "firstName": request.form['firstName'],
+        "lastName": request.form['lastName'],
+        "email": email
+    })
     return "Sent"
 
 

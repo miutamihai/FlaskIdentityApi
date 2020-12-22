@@ -1,4 +1,5 @@
 import os
+import pymongo
 
 from dotenv import load_dotenv
 from flask import Flask
@@ -12,6 +13,7 @@ def setup():
     load_dotenv()
 
     app = Flask(__name__, template_folder='../templates')
+    client = pymongo.MongoClient(f'mongodb://{os.getenv("MONGO_USER")}:{os.getenv("MONGO_PASSWORD")}@localhost:27017/')
 
     app.config['JWT_SECRET_KEY'] = os.getenv('SECRET')
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -23,5 +25,6 @@ def setup():
 
     mail = Mail(app)
     jwt = JWTManager(app)
+    users = client['lexbox']['users']
 
-    return app, mail, jwt
+    return app, mail, jwt, users
