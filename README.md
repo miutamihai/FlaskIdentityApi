@@ -15,9 +15,12 @@ a `.env` file in the project's root directory. These are:
 First make sure to have a MongoDb instance running. This
 can be achieved with `docker` by running the following command:
 `docker run -it --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin -e MONGO_INITDB_DATABASE=lexbox mongo`
+Also, bear in mind that the following commands apply to UNIX-like systems,
+like Linux and MacOS. If using Windows, go ask Billie for help. 
 
 * Open up a terminal
 * Navigate to the project's root directory
+* Run: `python3 -m venv venv`
 * Run: `source venv/bin/activate`
 * Run: `pip3 install -r requirements.txt`
 * Run: `python3 main.py`
