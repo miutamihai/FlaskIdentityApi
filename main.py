@@ -12,6 +12,7 @@ from flask_mail import Message
 
 from common.response_builder import ResponseBuilder
 from config.setup import setup
+from controllers.main import Controller
 
 app, mail, jwt, users, minio_client, owner_email = setup()
 
@@ -39,41 +40,7 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    try:
-        email = request.form['email']
-        if users.find_one({"email": email}) is not None:
-            return ResponseBuilder.failure("Email already exists", 401)
-        msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[email])
-        msg.html = render_template("ConfirmationEmail.html",
-                                   firstName=request.form['firstName'],
-                                   lastName=request.form['lastName'],
-                                   confirmationUrl=f'{os.getenv("URL")}/confirm_email?email={email}')
-        mail.send(msg)
-        users.insert_one({
-            "firstName": request.form['firstName'],
-            "lastName": request.form['lastName'],
-            "email": email,
-            "cnp": request.form['cnp'],
-            "ci": {
-                "series": request.form['ciSeries'],
-                "number": request.form['ciNumber']
-            },
-            "email_confirmed": False,
-            "address": {
-                "city": request.form['city'],
-                "street": request.form['street'],
-                "number": request.form['number'],
-                "block": request.form['block'],
-                "stair": request.form['stair'],
-                "apartment": request.form['apartment'],
-                "county": request.form['county']
-            }
-        })
-        access_token = create_access_token(identity=email),
-        refresh_token = create_refresh_token(identity=email)
-        return ResponseBuilder.success({"access_token": access_token, "refresh_token": refresh_token})
-    except Exception as e:
-        return ResponseBuilder.failure(str(e))
+    return Controller.register(request_form=request.form, users=users, mail=mail)
 
 
 @app.route('/refresh', methods=['POST'])
