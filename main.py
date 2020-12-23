@@ -10,6 +10,7 @@ from flask_jwt_extended import (
 )
 from flask_mail import Message
 
+from common.response_builder import ResponseBuilder
 from config.setup import setup
 
 app, mail, jwt, users, minio_client, owner_email = setup()
@@ -19,7 +20,7 @@ app, mail, jwt, users, minio_client, owner_email = setup()
 def login():
     user = users.find_one({"email": request.form["email"]})
     if user is None:
-        return Response('{ "success": false, "exception": "User not found" }', status=404, mimetype='application/json')
+        return ResponseBuilder.failure("User not found", 404)
 
     key = hashlib.pbkdf2_hmac(
         'sha256',
@@ -31,12 +32,9 @@ def login():
     if key == user["key"]:
         access_token = create_access_token(identity=request.form['email']),
         refresh_token = create_refresh_token(identity=request.form['email'])
-        return Response(f'{{ "success": true, "access_token": "{access_token}", "refresh_token": "{refresh_token}" }}',
-                        status=200,
-                        mimetype='application/json')
+        return ResponseBuilder.success({"access_token": access_token, "refresh_token": refresh_token})
     else:
-        return Response('{ "success": false, "exception": "Incorrect password" }', status=401, mimetype='application'
-                                                                                                        '/json')
+        return ResponseBuilder.failure("Incorrect password", 401)
 
 
 @app.route('/register', methods=['POST'])
@@ -44,8 +42,7 @@ def register():
     try:
         email = request.form['email']
         if users.find_one({"email": email}) is not None:
-            return Response('{ "success": false, "exception": "Email already exists" }', status=401,
-                            mimetype='application/json')
+            return ResponseBuilder.failure("Email already exists", 401)
         msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[email])
         msg.html = render_template("ConfirmationEmail.html",
                                    firstName=request.form['firstName'],
@@ -74,11 +71,9 @@ def register():
         })
         access_token = create_access_token(identity=email),
         refresh_token = create_refresh_token(identity=email)
-        return Response(f'{{ "success": true, "access_token": "{access_token}", "refresh_token": "{refresh_token}" }}',
-                        status=200,
-                        mimetype='application/json')
+        return ResponseBuilder.success({"access_token": access_token, "refresh_token": refresh_token})
     except Exception as e:
-        return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
+        return ResponseBuilder.failure(str(e))
 
 
 @app.route('/refresh', methods=['POST'])
@@ -86,7 +81,7 @@ def register():
 def refresh():
     email = get_jwt_identity()
     access_token = create_access_token(identity=email)
-    return Response(f'{{ "success": true, "access_token": "{access_token}" }}', status=200, mimetype='application/json')
+    return ResponseBuilder.success({"access_token": access_token})
 
 
 @app.route('/confirm_email', methods=['POST'])
@@ -95,8 +90,7 @@ def confirm():
     try:
         email = get_jwt_identity()
         if users.find_one({"email": email})["email_confirmed"]:
-            return Response('{ "success": false, "exception": Email already confirmed }', status=401,
-                            mimetype='application/json')
+            return ResponseBuilder.failure("Email already confirmed", 401)
         salt = os.urandom(32)
         password = request.form['password']
         key = hashlib.pbkdf2_hmac(
@@ -110,9 +104,9 @@ def confirm():
             "salt": salt,
             "key": key
         }})
-        return Response('{ "success": true }', status=205, mimetype='application/json')
+        return ResponseBuilder.success({"message": "Email confirmed"})
     except Exception as e:
-        return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
+        return ResponseBuilder.failure(str(e))
 
 
 @app.route('/generate_document', methods=['POST'])
@@ -149,11 +143,9 @@ def generate():
                                    lastName=user['lastName'],
                                    documentUrl=download_link)
         mail.send(msg)
-
-        return Response(f'{{ "download_link": "{download_link}" }}', status=200,
-                        mimetype='application/json')
+        return ResponseBuilder.success({"download_link": download_link})
     except Exception as e:
-        return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
+        return ResponseBuilder.failure(str(e))
 
 
 if __name__ == '__main__':
