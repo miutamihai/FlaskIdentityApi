@@ -118,39 +118,42 @@ def confirm():
 @app.route('/generate_document', methods=['POST'])
 @jwt_required
 def generate():
-    doc = DocxTemplate("templates/request.docx")
-    user = users.find_one({"email": get_jwt_identity()})
-    context = {
-        "law": request.json.get('law', None),
-        "first_name": user['firstName'],
-        "last_name": user['lastName'],
-        "address": user['address'],
-        "ci": user['ci'],
-        "assisted": request.json.get('assisted', None),
-        "accused": request.json.get('accused', None),
-        "record": request.json.get('record', None),
-        "fine": request.json.get('fine', None),
-        "sanction": request.json.get('sanction', None),
-        "agreed_to_sanction": request.json.get('agreed_to_sanction', None),
-        "witnesses": request.json.get('witnesses', None)
-    }
-    doc.render(context)
-    doc.save("result.docx")
-    cloud_id = str(uuid.uuid1())
-    with open("result.docx", "rb") as f:
-        minio_client.upload_fileobj(f, 'lexbox', cloud_id)
-    os.remove('result.docx')
-    download_link = f'http://localhost:9000/lexbox/{cloud_id}'
+    try:
+        doc = DocxTemplate("templates/request.docx")
+        user = users.find_one({"email": get_jwt_identity()})
+        context = {
+            "law": request.json.get('law', None),
+            "first_name": user['firstName'],
+            "last_name": user['lastName'],
+            "address": user['address'],
+            "ci": user['ci'],
+            "assisted": request.json.get('assisted', None),
+            "accused": request.json.get('accused', None),
+            "record": request.json.get('record', None),
+            "fine": request.json.get('fine', None),
+            "sanction": request.json.get('sanction', None),
+            "agreed_to_sanction": request.json.get('agreed_to_sanction', None),
+            "witnesses": request.json.get('witnesses', None)
+        }
+        doc.render(context)
+        doc.save("result.docx")
+        cloud_id = str(uuid.uuid1())
+        with open("result.docx", "rb") as f:
+            minio_client.upload_fileobj(f, 'lexbox', cloud_id)
+        os.remove('result.docx')
+        download_link = f'http://localhost:9000/lexbox/{cloud_id}'
 
-    msg = Message('Notificare LexBox', sender=os.getenv('EMAIL'), recipients=[owner_email])
-    msg.html = render_template("NotificationEmail.html",
-                               firstName=request.form['firstName'],
-                               lastName=request.form['lastName'],
-                               documentUrl=download_link)
-    mail.send(msg)
+        msg = Message('Notificare LexBox', sender=os.getenv('EMAIL'), recipients=[owner_email])
+        msg.html = render_template("NotificationEmail.html",
+                                   firstName=user['firstName'],
+                                   lastName=user['lastName'],
+                                   documentUrl=download_link)
+        mail.send(msg)
 
-    return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200,
-                    mimetype='application/json')
+        return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200,
+                        mimetype='application/json')
+    except Exception as e:
+        return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
 
 
 if __name__ == '__main__':
