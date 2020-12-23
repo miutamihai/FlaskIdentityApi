@@ -137,11 +137,11 @@ def generate():
         }
         doc.render(context)
         doc.save("result.docx")
-        cloud_id = str(uuid.uuid1())
+        file_name = f'Cerere-{user["firstName"]}-{user["lastName"]}-{str(uuid.uuid1())}.docx'
         with open("result.docx", "rb") as f:
-            minio_client.upload_fileobj(f, 'lexbox', cloud_id)
+            minio_client.upload_fileobj(f, 'lexbox', file_name)
         os.remove('result.docx')
-        download_link = f'http://localhost:9000/lexbox/{cloud_id}'
+        download_link = f'http://localhost:9000/lexbox/{file_name}'
 
         msg = Message('Notificare LexBox', sender=os.getenv('EMAIL'), recipients=[owner_email])
         msg.html = render_template("NotificationEmail.html",
@@ -150,7 +150,7 @@ def generate():
                                    documentUrl=download_link)
         mail.send(msg)
 
-        return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200,
+        return Response(f'{{ "download_link": "{download_link}" }}', status=200,
                         mimetype='application/json')
     except Exception as e:
         return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
