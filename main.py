@@ -1,12 +1,10 @@
-import hashlib
 import os
 import uuid
 
 from docxtpl import DocxTemplate
 from flask import request, render_template
 from flask_jwt_extended import (
-    jwt_required, jwt_refresh_token_required, create_access_token,
-    get_jwt_identity
+    jwt_required, jwt_refresh_token_required, get_jwt_identity
 )
 from flask_mail import Message
 
@@ -36,26 +34,7 @@ def refresh():
 @app.route('/confirm_email', methods=['POST'])
 @jwt_required
 def confirm():
-    try:
-        email = get_jwt_identity()
-        if users.find_one({"email": email})["email_confirmed"]:
-            return ResponseBuilder.failure("Email already confirmed", 401)
-        salt = os.urandom(32)
-        password = request.form['password']
-        key = hashlib.pbkdf2_hmac(
-            'sha256',
-            password.encode('utf-8'),
-            salt,
-            100000
-        )
-        users.update_one({"email": email}, {"$set": {
-            "email_confirmed": True,
-            "salt": salt,
-            "key": key
-        }})
-        return ResponseBuilder.success({"message": "Email confirmed"})
-    except Exception as e:
-        return ResponseBuilder.failure(str(e))
+    return Controller.confirm(request_form=request.form, users=users)
 
 
 @app.route('/generate_document', methods=['POST'])

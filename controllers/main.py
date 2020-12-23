@@ -1,3 +1,4 @@
+from controllers.confirmation.confirm_service import confirm_service
 from controllers.login.login_service import login_service
 from controllers.refresh.refresh_service import refresh_service
 from controllers.register.register_service import register_service
@@ -15,3 +16,7 @@ class Controller:
     @staticmethod
     def refresh():
         return refresh_service()
+
+    @staticmethod
+    def confirm(request_form, users):
+        return confirm_service(request_form, users)
