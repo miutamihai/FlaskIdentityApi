@@ -10,6 +10,7 @@ a `.env` file in the project's root directory. These are:
 * URL -> url of where the application is running
 * MONGO_USER -> the mongodb user 
 * MONGO_PASSWORD -> the mongodb password
+* OWNER_EMAIL -> the email of the application owner
 
 ## Running the app
 First make sure to have MongoDb and Minio instances running. They can both be 

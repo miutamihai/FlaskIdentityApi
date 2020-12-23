@@ -3,7 +3,7 @@ import os
 import uuid
 
 from docxtpl import DocxTemplate
-from flask import request, render_template, Response, jsonify
+from flask import request, render_template, Response
 from flask_jwt_extended import (
     jwt_required, jwt_refresh_token_required, create_access_token,
     get_jwt_identity, create_refresh_token
@@ -12,7 +12,7 @@ from flask_mail import Message
 
 from config.setup import setup
 
-app, mail, jwt, users, minio_client = setup()
+app, mail, jwt, users, minio_client, owner_email = setup()
 
 
 @app.route('/login', methods=['POST'])
@@ -140,6 +140,15 @@ def generate():
     with open("result.docx", "rb") as f:
         minio_client.upload_fileobj(f, 'lexbox', cloud_id)
     os.remove('result.docx')
+    download_link = f'http://localhost:9000/lexbox/{cloud_id}'
+
+    msg = Message('Notificare LexBox', sender=os.getenv('EMAIL'), recipients=[owner_email])
+    msg.html = render_template("NotificationEmail.html",
+                               firstName=request.form['firstName'],
+                               lastName=request.form['lastName'],
+                               documentUrl=download_link)
+    mail.send(msg)
+
     return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200,
                     mimetype='application/json')
 

@@ -31,5 +31,6 @@ def setup():
     mail = Mail(app)
     jwt = JWTManager(app)
     users = client['lexbox']['users']
+    owner_email = os.getenv('OWNER_EMAIL')
 
-    return app, mail, jwt, users, minio_client
+    return app, mail, jwt, users, minio_client, owner_email
