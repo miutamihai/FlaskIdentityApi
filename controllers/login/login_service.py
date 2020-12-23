@@ -9,6 +9,9 @@ def login_service(request_form, users):
     if user is None:
         return ResponseBuilder.failure("User not found", 404)
 
+    if not user['email_confirmed']:
+        return ResponseBuilder.failure("Email not confirmed", 401)
+
     key = KeyBuilder.make_key(salt=user['salt'], password=request_form['password'])
 
     if key == user["key"]:
