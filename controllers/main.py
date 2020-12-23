@@ -1,4 +1,5 @@
 from controllers.login.login_service import login_service
+from controllers.refresh.refresh_service import refresh_service
 from controllers.register.register_service import register_service
 
 
@@ -10,3 +11,7 @@ class Controller:
     @staticmethod
     def login(request_form, users):
         return login_service(request_form, users)
+
+    @staticmethod
+    def refresh():
+        return refresh_service()

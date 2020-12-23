@@ -30,9 +30,7 @@ def register():
 @app.route('/refresh', methods=['POST'])
 @jwt_refresh_token_required
 def refresh():
-    email = get_jwt_identity()
-    access_token = create_access_token(identity=email)
-    return ResponseBuilder.success({"access_token": access_token})
+    return Controller.refresh()
 
 
 @app.route('/confirm_email', methods=['POST'])
