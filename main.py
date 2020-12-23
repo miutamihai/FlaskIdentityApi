@@ -3,10 +3,10 @@ import os
 import uuid
 
 from docxtpl import DocxTemplate
-from flask import request, render_template, Response
+from flask import request, render_template
 from flask_jwt_extended import (
     jwt_required, jwt_refresh_token_required, create_access_token,
-    get_jwt_identity, create_refresh_token
+    get_jwt_identity
 )
 from flask_mail import Message
 
@@ -19,23 +19,7 @@ app, mail, jwt, users, minio_client, owner_email = setup()
 
 @app.route('/login', methods=['POST'])
 def login():
-    user = users.find_one({"email": request.form["email"]})
-    if user is None:
-        return ResponseBuilder.failure("User not found", 404)
-
-    key = hashlib.pbkdf2_hmac(
-        'sha256',
-        request.form['password'].encode('utf-8'),
-        user["salt"],
-        100000
-    )
-
-    if key == user["key"]:
-        access_token = create_access_token(identity=request.form['email']),
-        refresh_token = create_refresh_token(identity=request.form['email'])
-        return ResponseBuilder.success({"access_token": access_token, "refresh_token": refresh_token})
-    else:
-        return ResponseBuilder.failure("Incorrect password", 401)
+    return Controller.login(request_form=request.form, users=users)
 
 
 @app.route('/register', methods=['POST'])
