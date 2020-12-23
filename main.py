@@ -123,6 +123,7 @@ def generate():
     cloud_id = str(uuid.uuid1())
     with open("result.docx", "rb") as f:
         minio_client.upload_fileobj(f, 'lexbox', cloud_id)
+    os.remove('result.docx')
     return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200, mimetype='application/json')
 
 
