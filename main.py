@@ -3,10 +3,10 @@ import os
 import uuid
 
 from docxtpl import DocxTemplate
-from flask import request, render_template, Response
+from flask import request, render_template, Response, jsonify
 from flask_jwt_extended import (
-    jwt_required, create_access_token,
-    get_jwt_identity
+    jwt_required, jwt_refresh_token_required, create_access_token,
+    get_jwt_identity, create_refresh_token
 )
 from flask_mail import Message
 
@@ -29,8 +29,11 @@ def login():
     )
 
     if key == user["key"]:
-        access_token = create_access_token(identity=request.form["email"])
-        return Response(f'{{ "success": true, "token": "{access_token}" }}', status=200, mimetype='application/json')
+        access_token = create_access_token(identity=request.form['email']),
+        refresh_token = create_refresh_token(identity=request.form['email'])
+        return Response(f'{{ "success": true, "access_token": "{access_token}", "refresh_token": "{refresh_token}" }}',
+                        status=200,
+                        mimetype='application/json')
     else:
         return Response('{ "success": false, "exception": "Incorrect password" }', status=401, mimetype='application'
                                                                                                         '/json')
@@ -41,7 +44,8 @@ def register():
     try:
         email = request.form['email']
         if users.find_one({"email": email}) is not None:
-            return Response('{ "success": false, "exception": "Email already exists" }', status=401, mimetype='application/json')
+            return Response('{ "success": false, "exception": "Email already exists" }', status=401,
+                            mimetype='application/json')
         msg = Message('Bun venit de la LexBox', sender=os.getenv('EMAIL'), recipients=[email])
         msg.html = render_template("ConfirmationEmail.html",
                                    firstName=request.form['firstName'],
@@ -68,10 +72,21 @@ def register():
                 "county": request.form['county']
             }
         })
-        access_token = create_access_token(identity=email)
-        return Response(f'{{ "success": true, "token": "{access_token}" }}', status=200, mimetype='application/json')
+        access_token = create_access_token(identity=email),
+        refresh_token = create_refresh_token(identity=email)
+        return Response(f'{{ "success": true, "access_token": "{access_token}", "refresh_token": "{refresh_token}" }}',
+                        status=200,
+                        mimetype='application/json')
     except Exception as e:
         return Response(f'{{ "success": false, "exception": {str(e)} }}', status=500, mimetype='application/json')
+
+
+@app.route('/refresh', methods=['POST'])
+@jwt_refresh_token_required
+def refresh():
+    email = get_jwt_identity()
+    access_token = create_access_token(identity=email)
+    return Response(f'{{ "success": true, "access_token": "{access_token}" }}', status=200, mimetype='application/json')
 
 
 @app.route('/confirm_email', methods=['POST'])
@@ -80,7 +95,8 @@ def confirm():
     try:
         email = get_jwt_identity()
         if users.find_one({"email": email})["email_confirmed"]:
-            return Response('{ "success": false, "exception": Email already confirmed }', status=401, mimetype='application/json')
+            return Response('{ "success": false, "exception": Email already confirmed }', status=401,
+                            mimetype='application/json')
         salt = os.urandom(32)
         password = request.form['password']
         key = hashlib.pbkdf2_hmac(
@@ -124,7 +140,8 @@ def generate():
     with open("result.docx", "rb") as f:
         minio_client.upload_fileobj(f, 'lexbox', cloud_id)
     os.remove('result.docx')
-    return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200, mimetype='application/json')
+    return Response(f'{{ "download_link": "http://localhost:9000/lexbox/{cloud_id}" }}', status=200,
+                    mimetype='application/json')
 
 
 if __name__ == '__main__':
